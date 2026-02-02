@@ -129,3 +129,104 @@ jobs:
           echo -e "\x1b[31mError: You need to run scripts/pyupgrade-all-files.py locally and commit the result.\x1b[0m"
           exit 1
         )
+
+  black:
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v6
+    - uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+    - run: pip install $(grep ^black requirements-dev.txt)
+    - name: Check formatting of porcupine files
+      run: |
+        black --check porcupine || (
+          echo -e "\x1b[31mError: You need to run 'black porcupine' locally and commit the result.\x1b[0m"
+          exit 1
+        )
+    - name: Check formatting of tests
+      run: |
+        black --check tests || (
+          echo -e "\x1b[31mError: You need to run 'black tests' locally and commit the result.\x1b[0m"
+          exit 1
+        )
+    - name: Check formatting of scripts
+      run: |
+        black --check scripts || (
+          echo -e "\x1b[31mError: You need to run 'black scripts' locally and commit the result.\x1b[0m"
+          exit 1
+        )
+
+  isort:
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v6
+    - uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+    - run: pip install $(grep ^isort requirements-dev.txt)
+    - name: Check imports in porcupine files
+      run: |
+        isort --check porcupine || (
+          echo -e "\x1b[31mError: You need to run 'isort porcupine' locally and commit the result.\x1b[0m"
+          exit 1
+        )
+    - name: Check imports in tests
+      run: |
+        isort --check porcupine || (
+          echo -e "\x1b[31mError: You need to run 'isort tests' locally and commit the result.\x1b[0m"
+          exit 1
+        )
+    - name: Check imports in scripts
+      run: |
+        isort --check porcupine || (
+          echo -e "\x1b[31mError: You need to run 'isort scripts' locally and commit the result.\x1b[0m"
+          exit 1
+        )
+
+  pycln:
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v6
+    - uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+    - run: pip install $(grep ^pycln requirements-dev.txt)
+    - name: Check porcupine files
+      run: |
+        pycln --check porcupine || (
+          echo -e "\x1b[31mError: You need to run 'pycln porcupine' locally and commit the result.\x1b[0m"
+          exit 1
+        )
+    - name: Check tests
+      run: |
+        pycln --check porcupine || (
+          echo -e "\x1b[31mError: You need to run 'pycln tests' locally and commit the result.\x1b[0m"
+          exit 1
+        )
+    - name: Check scripts
+      run: |
+        pycln --check porcupine || (
+          echo -e "\x1b[31mError: You need to run 'pycln scripts' locally and commit the result.\x1b[0m"
+          exit 1
+        )
+
+  # The requirements-dev.txt file is auto-generated. This job makes sure that
+  # it stays up to date.
+  requirements-dev:
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v6
+    - uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+    - run: python3 scripts/generate-requirements-dev.py
+    - run: |
+        git diff --exit-code || (
+          echo -e "\x1b[31mError: You need to run scripts/generate-requirements-dev.py locally and commit the result.\x1b[0m"
+          exit 1
+        )
