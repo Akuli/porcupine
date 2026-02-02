@@ -341,7 +341,8 @@ def test_no_previous_command_error(filetab, tmp_path, mocker):
 
 
 @pytest.mark.skipif(
-    shutil.which("python3") is None and sys.platform != "win32", reason="uses python3"
+    shutil.which("python3") is None and sys.platform != "win32",
+    reason="uses python3 command, which is not available with that name on NetBSD",
 )
 def test_example_commands_of_different_filetypes(filetab, tmp_path, mocker):
     python_mock = mocker.patch("porcupine.plugins.run.terminal.run_command")
