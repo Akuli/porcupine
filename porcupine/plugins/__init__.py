@@ -1,4 +1,5 @@
 """This folder contains all plugins that come with Porcupine."""
+
 from __future__ import annotations
 
 from porcupine import dirs

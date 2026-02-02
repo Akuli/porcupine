@@ -5,7 +5,6 @@ import dataclasses
 import json
 import sys
 from pathlib import Path
-from typing import Optional
 
 import dacite
 
@@ -18,7 +17,7 @@ from . import common
 class _HistoryItem:
     command: common.Command
     use_count: int
-    filetype_name: Optional[str]
+    filetype_name: str | None
     key_id: int
 
 

@@ -1,4 +1,5 @@
 """Set the title and icon of the Porcupine window."""
+
 from porcupine import __version__ as porcupine_version
 from porcupine import get_main_window, images
 

@@ -16,6 +16,7 @@ Some images are different for light and dark UI themes, but the returned
 For example, to use either `closebutton_dark.png` or `closebutton_light.png`,
 you would simply do `images.get("closebutton")`.
 """
+
 from __future__ import annotations
 
 import atexit
@@ -51,7 +52,9 @@ _images_that_can_be_dark_or_light = {"closebutton", "pause", "resume"}
 
 def _get_image_file(name: str) -> Path:
     if name in _images_that_can_be_dark_or_light:
-        if utils.is_bright(Style().lookup("TLabel.label", "background")):
+        # The "or" fallback is needed in some corner case that I don't fully
+        # understand. This will later run again with the correct color.
+        if utils.is_bright(Style().lookup("TLabel.label", "background") or "white"):
             name += "_dark"
         else:
             name += "_light"

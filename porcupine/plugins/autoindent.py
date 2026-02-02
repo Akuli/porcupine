@@ -1,4 +1,5 @@
 """Indent new lines automatically when Enter is pressed."""
+
 from __future__ import annotations
 
 import dataclasses
@@ -32,8 +33,8 @@ def leading_whitespace(string: str) -> str:
 
 @dataclasses.dataclass
 class AutoIndentRegexes:
-    indent: Optional[str] = None
-    dedent: Optional[str] = None
+    indent: str | None = None
+    dedent: str | None = None
     dedent_prev_line: bool = False
 
 

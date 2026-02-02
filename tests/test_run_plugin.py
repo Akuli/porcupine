@@ -80,9 +80,9 @@ if sys.platform != "win32":
     assert "123" in get_output()
     assert "örkki" in get_output()
     if sys.platform == "win32":
-        assert get_output().count("\N{replacement character}") == 1
+        assert get_output().count("\N{REPLACEMENT CHARACTER}") == 1
     else:
-        assert get_output().count("\N{replacement character}") == 2
+        assert get_output().count("\N{REPLACEMENT CHARACTER}") == 2
 
 
 def test_input(filetab, tmp_path, wait_until):
@@ -275,19 +275,15 @@ def test_grep_n_output(tabmanager, tmp_path, wait_until):
 
 
 def test_pyright_output(tabmanager, tmp_path, wait_until):
-    (tmp_path / "_curses.pyi").write_text(
-        """\
+    (tmp_path / "_curses.pyi").write_text("""\
 import sys
 from typing import IO, Any, BinaryIO, NamedTuple, Tuple
-"""
-    )
-    (tmp_path / "fake_pyright.py").write_text(
-        """
+""")
+    (tmp_path / "fake_pyright.py").write_text("""
 import os
 print(f"{os.getcwd()}/_curses.pyi")
 print(f"  {os.getcwd()}/_curses.pyi:2:51 - error: blah blah")
-"""
-    )
+""")
 
     no_terminal.run_command(f"{utils.quote(sys.executable)} fake_pyright.py", tmp_path)
     wait_until(lambda: "The process completed successfully." in get_output())
@@ -295,13 +291,11 @@ print(f"  {os.getcwd()}/_curses.pyi:2:51 - error: blah blah")
 
 
 def test_python_unbuffered(tmp_path, wait_until):
-    (tmp_path / "sleeper.py").write_text(
-        """
+    (tmp_path / "sleeper.py").write_text("""
 import time
 print("This should show up immediately")
 time.sleep(10)
-"""
-    )
+""")
     start = time.monotonic()
     no_terminal.run_command(f"{utils.quote(sys.executable)} sleeper.py", tmp_path)
     wait_until(lambda: "This should show up immediately" in get_output())
@@ -310,13 +304,11 @@ time.sleep(10)
 
 
 def test_not_line_buffered(tmp_path, wait_until):
-    (tmp_path / "sleeper.py").write_text(
-        """
+    (tmp_path / "sleeper.py").write_text("""
 import time
 print("This should show up immediately", end="", flush=True)
 time.sleep(10)
-"""
-    )
+""")
     start = time.monotonic()
     no_terminal.run_command(f"{utils.quote(sys.executable)} sleeper.py", tmp_path)
     wait_until(lambda: "This should show up immediately" in get_output())
@@ -348,6 +340,10 @@ def test_no_previous_command_error(filetab, tmp_path, mocker):
     assert "then repeat it with F5" in str(mock.call_args)
 
 
+@pytest.mark.skipif(
+    shutil.which("python3") is None and sys.platform != "win32",
+    reason="uses python3 command, which is not available with that name on NetBSD",
+)
 def test_example_commands_of_different_filetypes(filetab, tmp_path, mocker):
     python_mock = mocker.patch("porcupine.plugins.run.terminal.run_command")
     html_mock = mocker.patch("porcupine.plugins.run.no_terminal.run_command")
@@ -402,15 +398,13 @@ def size_is_changing(path):
 @pytest.mark.skipif(sys.platform == "darwin", reason="somehow fails github actions on macos")
 def test_previous_process_dies(tmp_path, wait_until):
     (tmp_path / "hello.py").write_text("print('Hello')")
-    (tmp_path / "killed.py").write_text(
-        rf"""
+    (tmp_path / "killed.py").write_text(rf"""
 import time
 while True:
     with open("out.txt", "a") as file:
         file.write("Still alive\n")
     time.sleep({SMALL_TIME})
-"""
-    )
+""")
 
     no_terminal.run_command(f"{utils.quote(sys.executable)} killed.py", tmp_path)
     wait_until(lambda: (tmp_path / "out.txt").exists())
@@ -473,14 +467,12 @@ def test_stop_button_pressed_after_finished(tmp_path, wait_until):
 
 
 def test_infinite_loop(tmp_path, wait_until):
-    (tmp_path / "loop.py").write_text(
-        """\
+    (tmp_path / "loop.py").write_text("""\
 i = 0
 while True:
     print(i)
     i = i+1
-    """
-    )
+    """)
     no_terminal.run_command(f"{utils.quote(sys.executable)} loop.py", tmp_path)
 
     wait_until(

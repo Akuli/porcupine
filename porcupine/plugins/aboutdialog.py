@@ -1,4 +1,5 @@
 """Display the "About Porcupine" button in the "Help" menu."""
+
 from __future__ import annotations
 
 import os
@@ -8,9 +9,9 @@ import sys
 import tkinter
 import webbrowser
 from collections import deque
+from collections.abc import Callable
 from pathlib import Path
 from tkinter import ttk
-from typing import Callable
 
 from porcupine import __version__ as porcupine_version
 from porcupine import get_main_window, images, menubar, plugins, textutils, utils

@@ -13,6 +13,7 @@ It's fine if one or two properties aren't quite true, but most of them should be
 
 tl;dr: Please think twice before adding new things to this file.
 """
+
 from __future__ import annotations
 
 import codecs
@@ -30,10 +31,10 @@ import sys
 import threading
 import tkinter
 import traceback
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from pathlib import Path
 from tkinter import ttk
-from typing import TYPE_CHECKING, Any, Callable, Literal, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Literal, TypeVar, cast
 
 import dacite
 
@@ -214,8 +215,11 @@ class PanedWindow(tkinter.PanedWindow):
 
     def _update_colors(self, junk_event: object = None) -> None:
         ttk_bg = self.tk.eval("ttk::style lookup TLabel.label -background")
-        assert ttk_bg
-        self["bg"] = ttk_bg
+
+        # This is sometimes empty for whatever reason, but runs with the
+        # correct color afterwards.
+        if ttk_bg:
+            self["bg"] = ttk_bg
 
 
 # TODO: document this?
@@ -271,8 +275,10 @@ def mix_colors(color1: str, color2: str, color1_amount: float) -> str:
 
 # This doesn't handle all possible cases, see bind(3tk)
 def _format_binding(binding: str, menu: bool) -> str:
+    binding = binding.lstrip("<").rstrip(">")
+    parts = re.split(r"(?<!-)-", binding)  # "Mod1-Key--" --> ["Mod1", "Key", "-"]
+
     mac = porcupine.get_main_window().tk.eval("tk windowingsystem") == "aqua"
-    parts = binding.lstrip("<").rstrip(">").split("-")
 
     # don't know how to show click in mac menus
     if mac and menu and any(parts[i : i + 2] == "Button-1".split("-") for i in range(len(parts))):
@@ -358,7 +364,7 @@ def tkinter_safe_string(string: str, *, hide_unsupported_chars: bool = False) ->
     if hide_unsupported_chars:
         replace_with = ""
     else:
-        replace_with = "\N{replacement character}"
+        replace_with = "\N{REPLACEMENT CHARACTER}"
 
     return "".join(replace_with if ord(char) > 0xFFFF else char for char in string)
 

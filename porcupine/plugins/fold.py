@@ -1,4 +1,5 @@
 """Fold parts of code with Edit/Fold."""
+
 from __future__ import annotations
 
 import tkinter

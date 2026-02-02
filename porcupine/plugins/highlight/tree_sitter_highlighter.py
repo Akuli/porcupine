@@ -6,11 +6,10 @@ import re
 import tkinter
 from collections.abc import Iterator
 from pathlib import Path
-from typing import Union
 
 import dacite
 import tree_sitter
-import tree_sitter_languages
+import tree_sitter_language_pack
 import yaml
 
 from porcupine import textutils
@@ -27,7 +26,7 @@ TOKEN_MAPPING_DIR = Path(__file__).absolute().with_name("tree-sitter-token-mappi
 
 @dataclasses.dataclass
 class YmlConfig:
-    token_mapping: dict[str, Union[str, dict[str, str]]]
+    token_mapping: dict[str, str | dict[str, str]]
     dont_recurse_inside: list[str] = dataclasses.field(default_factory=list)
     queries: dict[str, str] = dataclasses.field(default_factory=dict)
 
@@ -43,10 +42,9 @@ def _strip_comments(query: str) -> str:
 class TreeSitterHighlighter(BaseHighlighter):
     def __init__(self, textwidget: tkinter.Text, language_name: str) -> None:
         super().__init__(textwidget)
-        self._language = tree_sitter_languages.get_language(language_name)
+        self._language = tree_sitter_language_pack.get_language(language_name)  # type: ignore
 
-        self._parser = tree_sitter.Parser()
-        self._parser.set_language(self._language)
+        self._parser = tree_sitter.Parser(self._language)
         self._tree = self._parser.parse(self._get_file_content_for_tree_sitter())
 
         token_mapping_path = TOKEN_MAPPING_DIR / (language_name + ".yml")
@@ -56,7 +54,7 @@ class TreeSitterHighlighter(BaseHighlighter):
         # Pseudo-optimization: "pre-compile" queries when the highlighter starts.
         # Also makes the highlighter fail noticably if any query contain syntax errors.
         self._queries = {
-            node_type_name: self._language.query(_strip_comments(text))
+            node_type_name: tree_sitter.Query(self._language, _strip_comments(text))
             for node_type_name, text in self._config.queries.items()
         }
 
@@ -81,6 +79,7 @@ class TreeSitterHighlighter(BaseHighlighter):
             # Specifying empty string can be used to set a custom fallback when
             # the text of the node isn't found in the config.
             default = config_value.get("", default)
+            assert node.text is not None
             return config_value.get(node.text.decode("utf-8"), default)
         return config_value
 
@@ -92,6 +91,7 @@ class TreeSitterHighlighter(BaseHighlighter):
         end_point: tuple[int, int],
     ) -> Iterator[tuple[tree_sitter.Node, str]]:
         assert self._config is not None
+        assert cursor.node is not None
         overlap_start = max(cursor.node.start_point, start_point)
         overlap_end = min(cursor.node.end_point, end_point)
         if overlap_start >= overlap_end:
@@ -100,7 +100,7 @@ class TreeSitterHighlighter(BaseHighlighter):
 
         query = self._queries.get(cursor.node.type)
         if query is not None:
-            captures = query.captures(cursor.node)
+            captures = tree_sitter.QueryCursor(query).captures(cursor.node)
             # Ignore the query if it doesn't match at all. Queries are usually
             # written to handle some specific situation, and we want a reasonable
             # fallback. For example, in a C function definition "int asdf() {}"
@@ -109,11 +109,12 @@ class TreeSitterHighlighter(BaseHighlighter):
             # it would be without the query.
             if captures:
                 to_recurse = []
-                for subnode, tag_or_recurse in captures:
-                    if tag_or_recurse == "recurse":
-                        to_recurse.append(subnode)
-                    else:
-                        yield (subnode, tag_or_recurse)
+                for tag_or_recurse, subnodes in captures.items():
+                    for subnode in subnodes:
+                        if tag_or_recurse == "recurse":
+                            to_recurse.append(subnode)
+                        else:
+                            yield (subnode, tag_or_recurse)
 
                 for subnode in to_recurse:
                     # Tell the tagging code that we're about to recurse.

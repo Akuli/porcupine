@@ -27,8 +27,8 @@ class Command:
 @dataclasses.dataclass
 class ExampleCommand:
     command: str
-    windows_command: Optional[str] = None
-    macos_command: Optional[str] = None
+    windows_command: str | None = None
+    macos_command: str | None = None
     working_directory: str = "{folder_path}"
     external_terminal: bool = True
 

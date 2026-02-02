@@ -1,4 +1,5 @@
 """Reload file from disk automatically."""
+
 from __future__ import annotations
 
 from porcupine import get_tab_manager, tabs

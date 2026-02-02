@@ -1,4 +1,5 @@
 """Save and restore opened tabs when Porcupine is restarted."""
+
 import logging
 import pickle
 from pathlib import Path

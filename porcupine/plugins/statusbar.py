@@ -1,4 +1,5 @@
 """Display a status bar in each file tab."""
+
 from __future__ import annotations
 
 import tkinter

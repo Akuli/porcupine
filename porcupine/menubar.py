@@ -57,12 +57,12 @@ import re
 import sys
 import tkinter
 import webbrowser
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from functools import partial
 from pathlib import Path
 from string import ascii_lowercase
 from tkinter import filedialog
-from typing import Any, Callable, Literal
+from typing import Any, Literal
 
 from porcupine import actions, pluginmanager, settings, tabs, utils
 from porcupine._state import get_main_window, get_tab_manager, quit

@@ -1,4 +1,5 @@
 """Allow dragging tabs or pressing keys to change their order."""
+
 from __future__ import annotations
 
 import tkinter

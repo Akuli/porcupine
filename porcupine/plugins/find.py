@@ -1,13 +1,14 @@
 """Find and replace text."""
+
 from __future__ import annotations
 
 import re
 import tkinter
 import weakref
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from functools import partial
 from tkinter import ttk
-from typing import Any, Callable, Literal, TypeVar, cast
+from typing import Any, Literal, TypeVar, cast
 
 from porcupine import get_tab_manager, images, menubar, tabs, textutils
 from porcupine.plugins import rightclick_menu

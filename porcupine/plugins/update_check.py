@@ -5,6 +5,7 @@ it by showing a message in the status bar. If you don't like it, uncheck the
 "Check for updates when Porcupine starts" checkbox in the settings or disable
 this plugin.
 """
+
 from __future__ import annotations
 
 import datetime

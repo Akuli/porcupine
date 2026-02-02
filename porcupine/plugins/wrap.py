@@ -1,6 +1,7 @@
 """
 "Wrap Long Lines" option in the View menu.
 """
+
 import tkinter
 from functools import partial
 

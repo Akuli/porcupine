@@ -1,4 +1,5 @@
 """Color items in the directory tree based on their git status."""
+
 from __future__ import annotations
 
 import ast

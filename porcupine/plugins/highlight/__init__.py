@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import logging
 import tkinter
-from typing import Callable
+from collections.abc import Callable
 
 from pygments.lexer import LexerMeta
 

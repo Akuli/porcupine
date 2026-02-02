@@ -186,19 +186,16 @@ def test_debug_dump(capsys):
 
     output, errors = capsys.readouterr()
     assert not errors
-    if sys.version_info < (3, 9):
-        output = output.replace("typing.Union[str, NoneType]", "typing.Optional[str]")
-    assert (
-        output
-        == """\
+    if sys.version_info < (3, 14):  # Needed on GitHub Actions python 3.13
+        output = output.replace("typing.Optional[str]", "str | None")
+    assert output == """\
 1 known options (add_option called)
-  foo = None    (type=typing.Optional[str], tag=None)
+  foo = None    (type=str | None, tag=None)
 
 1 unknown options (add_option not called)
   bar = ['a', 'b', 'c']    (tag='this is a tag')
 
 """
-    )
 
 
 def test_font_family_chooser():

@@ -2,6 +2,7 @@
 
 See the "Run" menu in the menubar.
 """
+
 from __future__ import annotations
 
 import sys

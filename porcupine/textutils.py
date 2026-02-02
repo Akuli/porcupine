@@ -5,10 +5,10 @@ import dataclasses
 import re
 import tkinter
 import weakref
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from functools import partial
 from tkinter.font import Font
-from typing import TYPE_CHECKING, Any, Callable
+from typing import TYPE_CHECKING, Any
 from weakref import WeakKeyDictionary
 
 from pygments import styles
@@ -52,6 +52,7 @@ class Change:
     beginning of the line, then the text on the line starts at text index
     ``'1.1'``, represented as ``[1, 0]`` here.
     """
+
     # These should be Tuple[int, int], but they can't be because converting to
     # json and back turns tuples to lists
     start: list[int]
@@ -72,6 +73,7 @@ class Changes(utils.EventDataclass):
     This boilerplate class is needed instead of a plain ``List[Change]``
     because of how :class:`porcupine.utils.EventDataclass` works.
     """
+
     change_list: list[Change]
 
 
@@ -880,7 +882,7 @@ def place_popup(
     if bbox is None:
         # happens quite rarely, just do not place a popup in this case
         return False
-    (cursor_x, cursor_y, cursor_width, cursor_height) = bbox
+    cursor_x, cursor_y, cursor_width, cursor_height = bbox
 
     parent_width, parent_height = textwidget_size(parent)
 

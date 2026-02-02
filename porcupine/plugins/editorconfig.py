@@ -1,4 +1,5 @@
 """Editorconfig support: https://editorconfig.org/"""
+
 # I found this library but it sucks lol, doesn't even support *.{py,js}:
 #
 #    https://pypi.org/project/EditorConfig/

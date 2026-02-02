@@ -1,4 +1,5 @@
 """Remember the size and location of the Porcupine window."""
+
 from __future__ import annotations
 
 import re

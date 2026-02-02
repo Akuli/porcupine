@@ -1,4 +1,5 @@
 """Add "git add" and some other options to the right-click menu in directory tree."""
+
 from __future__ import annotations
 
 import logging

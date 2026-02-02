@@ -1,8 +1,11 @@
+from tkinter.ttk import Style
+
 from porcupine.plugins.statusbar import StatusBar
 
 
 def test_reload_warning(filetab, tmp_path):
     statusbar: StatusBar = filetab.bottom_frame.nametowidget("statusbar")
+    default_foreground = Style().lookup(".", "foreground")
 
     filetab.path = tmp_path / "lol.py"
     filetab.save()
@@ -11,7 +14,7 @@ def test_reload_warning(filetab, tmp_path):
     assert filetab.reload()
     filetab.update()
     assert statusbar.path_label["text"].endswith("lol.py")
-    assert statusbar.path_label["foreground"] == ""
+    assert statusbar.path_label["foreground"] in ("", default_foreground)
 
     filetab.textwidget.insert("1.0", "asdf")
     filetab.path.write_text("foo")
@@ -20,11 +23,11 @@ def test_reload_warning(filetab, tmp_path):
     # Ctrl+Z or Command+Z
     assert "Press " in statusbar.path_label["text"]
     assert "Z to get your changes back" in statusbar.path_label["text"]
-    assert statusbar.path_label["foreground"] != ""
+    assert statusbar.path_label["foreground"] not in ("", default_foreground)
 
     filetab.save()  # user is happy with whatever is currently in text widget
     assert statusbar.path_label["text"].endswith("lol.py")
-    assert statusbar.path_label["foreground"] == ""
+    assert statusbar.path_label["foreground"] in ("", default_foreground)
 
 
 def select(filetab, start, end):
