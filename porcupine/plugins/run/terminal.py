@@ -72,36 +72,34 @@ def _run_in_macos_terminal_app(command: str | None, cwd: Path, env: dict[str, st
 
 
 def _run_in_x11_like_terminal(command: str | None, cwd: Path, env: dict[str, str]) -> None:
-    terminal: str = os.environ.get("TERMINAL", "x-terminal-emulator")
+    terminal: str | None = next(filter(lambda t: t is not None, (
+        shutil.which(term) for term in (
+            os.environ.get("TERMINAL", "x-terminal-emulator"),
+            "mate-terminal",
+            "xfce4-terminal",
+            "st",
+            "lxterm",
+            "uxterm",
+            "xterm",
+        )
+    )), None)
 
     # to config what x-terminal-emulator is:
     #
     #   $ sudo update-alternatives --config x-terminal-emulator
     #
     # TODO: document this
-    if terminal == "x-terminal-emulator":
-        log.debug("using x-terminal-emulator")
 
-        terminal_or_none = shutil.which(terminal)
-        if terminal_or_none is None:
-            log.warning("x-terminal-emulator not found")
-
-            # Ellusion told me on irc that porcupine didn't find his
-            # xfce4-terminal, and turned out he had no x-terminal-emulator...
-            # i'm not sure why, but this should work
-            #
-            # well, turns out he's using arch, so... anything could be wrong
-            terminal_or_none = shutil.which("xfce4-terminal")
-            if terminal_or_none is None:
-                # not much more can be done
-                messagebox.showerror(
-                    "x-terminal-emulator not found",
-                    "Cannot find x-terminal-emulator in $PATH. "
-                    "Are you sure that you have a terminal installed?",
-                )
-                return
-
-        terminal_path = Path(terminal_or_none)
+    if terminal is None:
+        log.warning("terminal emulator not found")
+        messagebox.showerror(
+            "Terminal emulator not found",
+            "Cannot find a terminal emulator in $PATH. "
+            "Try setting $TERMINAL to a path to a working terminal program.",
+        )
+        return
+    else:
+        terminal_path = Path(terminal)
         log.info(f"found a terminal: {terminal_path}")
 
         terminal_path = terminal_path.resolve()
@@ -116,8 +114,8 @@ def _run_in_x11_like_terminal(command: str | None, cwd: Path, env: dict[str, str
             terminal = "mate-terminal"
         else:
             terminal = str(terminal_path)
-    else:
-        log.debug(f"using $TERMINAL or fallback 'x-terminal-emulator', got {terminal!r}")
+
+        log.debug(f"using $TERMINAL or a fallback, got {terminal!r}")
 
     if shutil.which(terminal) is None:
         messagebox.showerror(

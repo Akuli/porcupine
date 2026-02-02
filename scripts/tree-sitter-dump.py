@@ -49,7 +49,6 @@ if args.query:
     print("Running query on the tree:", args.query)
     matches = QueryCursor(Query(language, args.query)).captures(tree.root_node)
     if matches:
-        print(matches)
         for tag, nodes in matches.items():
             for node in nodes:
                 print(f"  @{tag} matched:", end=" ")
