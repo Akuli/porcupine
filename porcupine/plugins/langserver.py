@@ -2,6 +2,7 @@
 # TODO: langservers are disabled for now. Fix and enable!
 
 """Langserver support for autocompletions."""
+
 # TODO: CompletionProvider
 # TODO: error reporting in gui somehow
 from __future__ import annotations

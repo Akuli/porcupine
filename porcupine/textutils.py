@@ -882,7 +882,7 @@ def place_popup(
     if bbox is None:
         # happens quite rarely, just do not place a popup in this case
         return False
-    (cursor_x, cursor_y, cursor_width, cursor_height) = bbox
+    cursor_x, cursor_y, cursor_width, cursor_height = bbox
 
     parent_width, parent_height = textwidget_size(parent)
 

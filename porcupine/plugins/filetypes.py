@@ -54,14 +54,12 @@ def load_filetypes() -> None:
     except FileNotFoundError:
         log.info(f"'{user_path}' not found, creating")
         with user_path.open("x") as file:  # error if exists
-            file.write(
-                """\
+            file.write("""\
 # Putting filetype configuration into this file overrides Porcupine's default
 # filetype configuration. You can read the default configuration here:
 #
 #    https://github.com/Akuli/porcupine/blob/main/porcupine/default_filetypes.toml
-"""
-            )
+""")
     except (OSError, UnicodeError, tomli.TOMLDecodeError):
         log.exception(f"reading '{user_path}' failed, using defaults")
 

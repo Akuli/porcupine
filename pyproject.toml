@@ -31,7 +31,7 @@ dependencies = [
     "sansio-lsp-client>=0.10.0,<0.11.0",
     # TODO: langservers are disabled for now
     #"python-language-server[rope,pyflakes]>=0.36.2,<1.0.0",
-    "black>=25.12.0",
+    "black==26.1.0",  # formatting changes between versions
     "isort>=7.0.0",
     "dacite>=1.5.1,<2.0.0",
     "tomli==2.0.1",

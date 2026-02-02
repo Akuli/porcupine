@@ -196,7 +196,7 @@ def open_tab_from_state_file() -> None:
         return
 
     with open(path, "rb") as file:
-        (tabtype, state, geometry) = pickle.load(file)
+        tabtype, state, geometry = pickle.load(file)
     get_main_window().geometry(geometry)
     get_tab_manager().add_tab(tabtype.from_state(get_tab_manager(), state))
 
