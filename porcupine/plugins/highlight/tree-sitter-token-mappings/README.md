@@ -60,7 +60,6 @@ queries, see [tree-sitter's documentation](https://tree-sitter.github.io/tree-si
           type=) text=')'
 
     Running query on the tree: (call arguments: (argument_list) @asdasd)
-    {'asdasd': [<Node type=argument_list, start_point=(0, 5), end_point=(0, 14)>]}
       @asdasd matched: type=argument_list text="('hello')"
 
 The script only prints the `@` captures. In the .yml files, you can use:
