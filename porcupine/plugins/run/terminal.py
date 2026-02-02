@@ -136,7 +136,7 @@ def _run_in_x11_like_terminal(command: str | None, cwd: Path, env: dict[str, str
 
     if command:
         real_command = [str(run_script), str(cwd), command]
-        if terminal == "st":
+        if os.path.basename(terminal) == "st":
             subprocess.Popen([terminal, "-e", *real_command], env=env)
         else:
             subprocess.Popen([terminal, "-e", " ".join(map(shlex.quote, real_command))], env=env)

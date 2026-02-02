@@ -30,7 +30,7 @@ dependencies = [
     "colorama>=0.2.5",
     "sansio-lsp-client>=0.10.0,<0.11.0",
     # TODO: langservers are disabled for now
-    #"python-language-server[rope,pyflakes]>=0.36.2,<1.0.0",
+    #"python-language-server[rope,pyflakes]>=0.36.2,<1.0.0",  # Do not add this back! Many problems with this. Also known as pyls.
     "black==26.1.0",  # formatting changes between versions
     "isort>=7.0.0",
     "dacite>=1.5.1,<2.0.0",
