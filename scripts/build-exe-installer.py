@@ -90,6 +90,7 @@ shutil.copytree(tkinter.__path__[0], "build/python-second/tkinter")
 shutil.copy("scripts/installer.nsi", "build/installer.nsi")
 shutil.copy("LICENSE", "build/LICENSE")
 shutil.copytree("launcher", "build/launcher")
+shutil.copy("porcupine/images/logo-200x200.ico", "build/porcupine-logo.ico")
 
 # I tried to give -D option to preprocessor, didn't work
 metadata_file = Path("build/launcher/metadata.rc")
@@ -97,9 +98,6 @@ print(f"Editing version info into {metadata_file}")
 metadata_file.write_text(
     metadata_file.read_text().replace("PORCUPINE_VERSION", f'"{porcupine_version}"')
 )
-
-print("Converting logo to .ico format")
-PIL.Image.open("porcupine/images/logo-200x200.gif").save("build/porcupine-logo.ico")
 
 # If you can't get a C compiler to work, you can install an older version of Porcupine and copy
 # its Porcupine.exe to launcher/Porcupine.exe
