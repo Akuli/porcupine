@@ -9,7 +9,7 @@ jobs:
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v4
-    - uses: actions/setup-python@v5
+    - uses: actions/setup-python@v6
       with:
         # This should be the oldest python version we support, so it is
         # backwards-compatible for older windows versions.
