@@ -6,12 +6,16 @@ import struct
 import subprocess
 import sys
 import tkinter
-import tomllib
 import zipfile
 from pathlib import Path
 
 import PIL.Image
 import requests
+
+if sys.version_info >= (3, 11):
+    import tomllib
+else:
+    import tomli as tomllib
 
 sys.path.append("")  # import from current working directory
 from porcupine import __version__ as porcupine_version
