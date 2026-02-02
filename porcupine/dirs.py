@@ -64,7 +64,7 @@ elif sys.platform == "darwin":
     log_dir = Path("~/Library/Logs/Porcupine").expanduser()
 
 else:
-    # This code is for linux, and for Tuomas running Porcupine on NetBSD.
+    # This code is for Linux and NetBSD.
     #
     # See https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html
     # for env vars and the fallbacks to be used when they are "either not set or empty".
