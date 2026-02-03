@@ -9,7 +9,6 @@ import tkinter
 import zipfile
 from pathlib import Path
 
-import PIL.Image
 import requests
 
 if sys.version_info >= (3, 11):
