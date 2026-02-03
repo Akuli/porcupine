@@ -116,9 +116,7 @@ def _run_in_x11_like_terminal(command: str | None, cwd: Path, env: dict[str, str
 
     terminal = str(terminal_path)
 
-    log.debug(f"using $TERMINAL or a fallback, got {terminal!r}")
-
-    if shutil.which(terminal) is None:
+    if not terminal_path.exists():  # paranoid test case against broken symlinks
         messagebox.showerror(
             f"{terminal!r} not found",
             f"Cannot find {terminal!r} in $PATH. Try setting $TERMINAL to a path to a working"
