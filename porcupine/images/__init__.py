@@ -61,8 +61,8 @@ def _get_image_file(name: str) -> Path:
 
     [path] = [
         path
-        for path in images_dir.iterdir()
-        if path.stem == name and path.suffix in (".gif", ".png")
+        for path in [images_dir / (name + ".gif"), images_dir / (name + ".png")]
+        if path.is_file()
     ]
     return path
 
