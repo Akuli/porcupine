@@ -72,7 +72,6 @@ def _run_in_macos_terminal_app(command: str | None, cwd: Path, env: dict[str, st
     # it's removed even if the command is interrupted
 
 
-# TODO: Clean up this function, it works but could be more tidy
 def _run_in_x11_like_terminal(command: str | None, cwd: Path, env: dict[str, str]) -> None:
     terminal: str | None = next(
         filter(
@@ -83,6 +82,9 @@ def _run_in_x11_like_terminal(command: str | None, cwd: Path, env: dict[str, str
                     os.environ.get("TERMINAL", "x-terminal-emulator"),
                     "mate-terminal",
                     "xfce4-terminal",
+                    "gnome-terminal",
+                    "terminology",
+                    "konsole",
                     "st",
                     "lxterm",
                     "uxterm",
@@ -107,26 +109,16 @@ def _run_in_x11_like_terminal(command: str | None, cwd: Path, env: dict[str, str
             "Try setting $TERMINAL to a path to a working terminal program.",
         )
         return
-    else:
-        terminal_path = Path(terminal)
-        log.info(f"found a terminal: {terminal_path}")
 
-        terminal_path = terminal_path.resolve()
-        log.debug(f"absolute path to terminal: {terminal_path}")
+    terminal_path = Path(terminal)
+    log.info(f"found a terminal: {terminal_path}")
 
-        # sometimes x-terminal-emulator points to mate-terminal.wrapper,
-        # it's a python script that changes some command line options
-        # and runs mate-terminal but it breaks passing arguments with
-        # the -e option for some reason
-        if terminal_path.name == "mate-terminal.wrapper":
-            log.info("using mate-terminal instead of mate-terminal.wrapper")
-            terminal = "mate-terminal"
-        else:
-            terminal = str(terminal_path)
+    terminal_path = terminal_path.resolve()
+    log.debug(f"absolute path to terminal: {terminal_path}")
 
-        log.debug(f"using $TERMINAL or a fallback, got {terminal!r}")
+    terminal = str(terminal_path)
 
-    if shutil.which(terminal) is None:
+    if not terminal_path.exists():  # paranoid test case against broken symlinks
         messagebox.showerror(
             f"{terminal!r} not found",
             f"Cannot find {terminal!r} in $PATH. Try setting $TERMINAL to a path to a working"
@@ -136,10 +128,10 @@ def _run_in_x11_like_terminal(command: str | None, cwd: Path, env: dict[str, str
 
     if command:
         real_command = [str(run_script), str(cwd), command]
-        if os.path.basename(terminal) == "st":
-            subprocess.Popen([terminal, "-e", *real_command], env=env)
-        else:
+        if terminal_path.name in ("gnome-terminal", "mate-terminal", "terminology"):
             subprocess.Popen([terminal, "-e", " ".join(map(shlex.quote, real_command))], env=env)
+        else:
+            subprocess.Popen([terminal, "-e", *real_command], env=env)
     else:
         subprocess.Popen(terminal, cwd=cwd, env=env)
 
