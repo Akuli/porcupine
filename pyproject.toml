@@ -49,7 +49,6 @@ dev = [
     "pytest-mock==3.15.1",
     "pycln==2.6.0",
     "pyupgrade==3.21.2",
-    "pillow>=5.4.1",
 
     # type checking, exact versions to avoid "works on my computer" problems
     "mypy==1.9.0",
