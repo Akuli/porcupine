@@ -2,6 +2,18 @@ Unlike the Git commit history, this changelog does not include code cleanups
 and other details that don't affect using Porcupine.
 
 
+## Unreleased
+
+- "Run in terminal" works now better in Linux (and BSD) systems without `x-terminal-emulator` by going through a big list of tested terminals.
+- Works on Python 3.10 and newer.
+- Reorganized and expanded documentation for developer enjoyment. Sphinx dropped.
+- Blockcursor plugin deleted
+- Dependencies removed and updated
+- Palaa tähän!! 1525, 1512, 1494
+- Allow saving truly empty files
+- Don't use "porcupine-venv" venv
+
+
 ## v2024.03.31
 
 - There are two new easter eggs in the about dialog. Happy Easter :)
