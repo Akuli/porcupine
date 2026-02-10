@@ -24,7 +24,7 @@ def add_project_and_select_file(file_path, project=None) -> None:
 @pytest.fixture
 def git_repo(tmp_path):
     run = partial(subprocess.run, stdout=subprocess.DEVNULL, shell=True, check=True, cwd=tmp_path)
-    run("git init")
+    run("git init --quiet")
     run("git config user.name foo")  # not --global, will stay inside test repo
     run("git config user.email foo@bar.baz")
 
