@@ -2,6 +2,27 @@ Unlike the Git commit history, this changelog does not include code cleanups
 and other details that don't affect using Porcupine.
 
 
+## Unreleased
+
+This is the first release in quite a long time: it has been almost two years since the last release of Porcupine.
+
+Porcupine now works on Python 3.10 and newer versions.
+
+Langservers don't work at all. So if you are on Windows and you used the Porcupine installer to get Porcupine, you may want to skip this release so you can continue to use langservers.
+
+Running commands:
+- When running commands without a terminal, Porcupine will now resize the output area so that it's always visible. Previously it was possible to resize it so small that you wouldn't see any output, and Porcupine would remember that size when you ran a command later. Thank you [ethical-haquer](https://github.com/ethical-haquer) for fixing this.
+- The "run in terminal" feature now works better on Linux (and BSD) systems, including those without the `x-terminal-emulator` symlink. Thank you [Tuomas](https://github.com/taahol) and [8manz](https://github.com/8manz) for fixing this.
+- Porcupine no longer uses the `porcupine-venv` virtual environment by default when running Python programs. It is intended to be used only for running Porcupine itself, and previously Porcupine treated it like any other venv. Thank you [ethical-haquer](https://github.com/ethical-haquer) for fixing this.
+
+Other changes:
+- You no longer need to double-click folders in the directory tree to open them. Thank you [celltoolz](https://github.com/celltoolz) for fixing this.
+- Porcupine no longer adds a newline character when you attempt to save an empty file. Thank you [Moosems](https://github.com/Moosems) for fixing this.
+- Many dependencies were updated. Some were removed.
+- `akuli.github.io/porcupine` was deleted. The good parts of that documentation are now in the `dev-doc` folder.
+- The blockcursor plugin was deleted.
+
+
 ## v2024.03.31
 
 - There are two new easter eggs in the about dialog. Happy Easter :)
