@@ -57,7 +57,8 @@ jobs:
       with:
         name: changelog
     - id: get_version
-      uses: battila7/get-version-action@v2
+      # refs/tags/v2026.02.16 --> 2026.02.16
+      run: echo "version-without-v=$(echo "$GITHUB_REF" | cut -dv -f2)" >> $GITHUB_OUTPUT
     - id: create_release
       uses: actions/create-release@v1.1.4
       env:
