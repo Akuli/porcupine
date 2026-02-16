@@ -2,7 +2,7 @@ Unlike the Git commit history, this changelog does not include code cleanups
 and other details that don't affect using Porcupine.
 
 
-## Unreleased
+## v2026.02.16
 
 This is the first release in quite a long time: it has been almost two years since the last release of Porcupine.
 
