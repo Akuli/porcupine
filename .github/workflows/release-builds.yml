@@ -2,7 +2,6 @@ on:
   push:
     tags:
       - v*
-      - w*
   pull_request:   # Build windows exe and docs, but not release anything
 
 jobs:
@@ -76,21 +75,3 @@ jobs:
         asset_path: PorcupineSetup_${{ steps.get_version.outputs.version-without-v }}.exe
         asset_name: PorcupineSetup_${{ steps.get_version.outputs.version-without-v }}.exe
         asset_content_type: application/vnd.microsoft.portable-executable
-
-  releasew:
-    runs-on: ubuntu-latest
-    # https://stackoverflow.com/a/58478262
-    #needs: [windows-build, docs, changelog]
-    needs: [windows-build, changelog]
-    if: startsWith(github.ref, 'refs/tags/w')
-    steps:
-    - uses: actions/download-artifact@v4
-      with:
-        name: windows-exe
-    - uses: actions/download-artifact@v4
-      with:
-        name: changelog
-    - id: get_version
-      # refs/tags/v2026.02.16 --> 2026.02.16
-      run: echo "version-without-v=${GITHUB_REF#refs/tags/w}" >> $GITHUB_OUTPUT
-    - run: echo PorcupineSetup_${{ steps.get_version.outputs.version-without-v }}.exe
