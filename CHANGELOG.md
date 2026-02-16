@@ -6,10 +6,12 @@ and other details that don't affect using Porcupine.
 
 This is the first release in quite a long time: it has been almost two years since the last release of Porcupine.
 
-Porcupine now works on Python 3.10 and newer versions. But langservers don't work at all. So if you are on Windows, and you used the Porcupine installer to get Porcupine, you may want to skip this release so you can continue to use langservers.
+Porcupine now works on Python 3.10 and newer versions.
+
+Langservers don't work at all. So if you are on Windows and you used the Porcupine installer to get Porcupine, you may want to skip this release so you can continue to use langservers.
 
 Running commands:
-- When running commands without a terminal, Porcupine will now resize the output area so that it's always visible. Previously it was possible to drag it to be so small that you wouldn't see any output, and Porcupine would remember it when you ran a command later. Thank you [ethical-haquer](https://github.com/ethical-haquer) for fixing this.
+- When running commands without a terminal, Porcupine will now resize the output area so that it's always visible. Previously it was possible to resize it so small that you wouldn't see any output, and Porcupine would remember that size when you ran a command later. Thank you [ethical-haquer](https://github.com/ethical-haquer) for fixing this.
 - The "run in terminal" feature now works better on Linux (and BSD) systems, including those without the `x-terminal-emulator` symlink. Thank you [Tuomas](https://github.com/taahol) and [8manz](https://github.com/8manz) for fixing this.
 - Porcupine no longer uses the `porcupine-venv` virtual environment by default when running Python programs. It is intended to be used only for running Porcupine itself, and previously Porcupine treated it like any other venv. Thank you [ethical-haquer](https://github.com/ethical-haquer) for fixing this.
 
