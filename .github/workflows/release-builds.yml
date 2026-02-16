@@ -91,5 +91,5 @@ jobs:
         name: changelog
     - id: get_version
       # refs/tags/v2026.02.16 --> 2026.02.16
-      run: echo "version-without-v=$(echo "$GITHUB_REF" | cut -dw -f2)" >> $GITHUB_OUTPUT
+      run: echo "version-without-v=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
     - run: echo PorcupineSetup_${{ steps.get_version.outputs.version-without-v }}.exe
