@@ -378,7 +378,6 @@ filename_patterns = ["*.md", "*.markdown"]
 pygments_lexer = "pygments.lexers.MarkdownLexer"
 syntax_highlighter = "tree_sitter"
 tree_sitter_language_name = "markdown"
-autoindent_regexes = {dedent = '.*\.', indent = '^([0-9]+\.|-) .*'}
 
 [YAML]
 filename_patterns = ["*.yml", "*.yaml"]
